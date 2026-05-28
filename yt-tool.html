@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>YT Summarizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Noto+Sans+JP:wght@300;400;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080808;
+  --surface: #111114;
+  --surface2: #18181c;
+  --border: #1e1e24;
+  --border2: #2a2a32;
+  --accent: #ff2d55;
+  --accent2: #ff9f0a;
+  --accent3: #30d158;
+  --blue: #0a84ff;
+  --text: #f0f0f0;
+  --text2: #888;
+  --text3: #444;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans JP', sans-serif;
+  --display: 'Archivo Black', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* Header */
+.header {
+  padding: 24px 20px 0;
+  margin-bottom: 24px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+h1 {
+  font-family: var(--display);
+  font-size: 28px;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+h1 span { color: var(--accent); }
+
+.version {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 2px;
+}
+
+/* Tabs */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+.tab {
+  padding: 14px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--text2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+/* Panels */
+.panel { display: none; padding: 20px; }
+.panel.active { display: block; }
+
+/* Settings section */
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  user-select: none;
+}
+
+.settings-toggle::before {
+  content: '▶';
+  font-size: 8px;
+  transition: transform 0.2s;
+}
+
+.settings-toggle.open::before { transform: rotate(90deg); }
+
+.settings-body { display: none; margin-bottom: 20px; }
+.settings-body.open { display: block; }
+
+/* Field */
+.field { margin-bottom: 12px; }
+
+.field-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+input[type="text"], input[type="password"], textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 12px 14px;
+  outline: none;
+  border-radius: 6px;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+
+input:focus, textarea:focus { border-color: var(--accent); }
+input::placeholder, textarea::placeholder { color: var(--text3); }
+
+.save-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.15s;
+}
+
+.save-btn:hover, .save-btn:active { border-color: var(--accent3); color: var(--accent3); }
+
+/* Main input area */
+.url-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.url-row input { flex: 1; }
+
+.primary-btn {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-family: var(--display);
+  font-size: 16px;
+  letter-spacing: 1px;
+  padding: 0 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.primary-btn:active { background: #cc2244; transform: scale(0.97); }
+.primary-btn:disabled { background: #330011; cursor: not-allowed; }
+
+/* Status */
+.status {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+  min-height: 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status.loading { color: var(--accent2); }
+.status.error { color: var(--accent); }
+.status.done { color: var(--accent3); }
+
+.spinner {
+  width: 12px; height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+  flex-shrink: 0;
+}
+
+.loading .spinner { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Progress bar */
+.progress-wrap {
+  background: var(--surface);
+  border-radius: 4px;
+  height: 3px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  display: none;
+}
+
+.progress-wrap.visible { display: block; }
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ctrl-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.ctrl-btn:active { background: var(--surface2); }
+
+.ctrl-btn.green { border-color: var(--accent3); color: var(--accent3); }
+.ctrl-btn.green:active { background: rgba(48,209,88,0.1); }
+
+.badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  margin-left: auto;
+}
+
+/* Video list */
+.video-list { display: flex; flex-direction: column; gap: 2px; }
+
+.video-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  animation: fadeUp 0.25s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.video-main {
+  display: grid;
+  grid-template-columns: 36px 68px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.video-num {
+  font-family: var(--display);
+  font-size: 18px;
+  color: var(--text3);
+  text-align: right;
+  line-height: 1;
+}
+
+.video-thumb {
+  width: 68px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--surface2);
+}
+
+.video-thumb-ph {
+  width: 68px;
+  height: 38px;
+  background: var(--surface2);
+  border-radius: 4px;
+}
+
+.video-info { overflow: hidden; }
+
+.video-title {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.video-url {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.video-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  border-top: 1px solid var(--border);
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.action-btn:first-child { border-right: 1px solid var(--border); }
+
+.action-btn.gemini { color: var(--blue); }
+.action-btn.gemini:active { background: rgba(10,132,255,0.1); }
+
+.action-btn.copy:active { background: var(--surface2); }
+.action-btn.copied { color: var(--accent3); }
+
+/* Notion auto panel */
+.auto-section { margin-bottom: 24px; }
+
+.section-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.prompt-area textarea {
+  min-height: 120px;
+  font-size: 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.run-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  color: #fff;
+  font-family: var(--display);
+  font-size: 20px;
+  letter-spacing: 2px;
+  padding: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 16px;
+}
+
+.run-btn:active { opacity: 0.8; transform: scale(0.98); }
+.run-btn:disabled { background: #2a1018; color: #555; cursor: not-allowed; transform: none; }
+
+/* Log */
+.log-wrap {
+  margin-top: 20px;
+  display: none;
+}
+
+.log-wrap.visible { display: block; }
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.log-list { display: flex; flex-direction: column; gap: 4px; }
+
+.log-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  animation: fadeUp 0.2s ease both;
+}
+
+.log-title {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-status {
+  font-family: var(--mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.log-status.pending { color: var(--text3); }
+.log-status.processing { color: var(--accent2); }
+.log-status.done { color: var(--accent3); }
+.log-status.error { color: var(--accent); }
+
+/* Empty state */
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 1px;
+  line-height: 2;
+}
+
+/* Notion history */
+.history-section { margin-top: 24px; }
+.history-list { display: flex; flex-direction: column; gap: 8px; }
+
+.history-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  animation: fadeUp 0.2s ease both;
+}
+
+.history-playlist {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-count {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.history-date {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+.history-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+.small-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.small-btn:active { background: var(--surface2); }
+.small-btn.danger { border-color: #440011; color: #666; }
+.small-btn.danger:active { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>YT<span>▸</span>AI</h1>
+    <span class="version">v1.0</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('quick')">⚡ 即時</div>
+  <div class="tab" onclick="switchTab('auto')">🤖 自動保存</div>
+</div>
+
+<!-- ========== QUICK TAB ========== -->
+<div class="panel active" id="panel-quick">
+
+  <div class="settings-toggle" id="quick-settings-toggle" onclick="toggleSettings('quick')">API設定</div>
+  <div class="settings-body" id="quick-settings-body">
+    <div class="field">
+      <label class="field-label">YouTube API キー</label>
+      <input type="password" id="q-yt-key" placeholder="AIzaSy..." />
+    </div>
+    <div class="field">
+      <label class="field-label">Gemini プロンプト（{URL}が動画URLに置換されます）</label>
+      <textarea id="q-prompt" rows="4">{URL}
+
+の全スクリプト、動画の画面（映像）から読み取れる視覚的な情報もしっかり反映させながら要約して。
+主題とは関係ない、細かい雑学とかも含めて全ての実践できる知識、実用的な知識、教訓、キーワードを漏らさず抽出して、動画を見たのと同じ効果が得られるようにして</textarea>
+    </div>
+    <button class="save-btn" onclick="saveQuickSettings()">保存</button>
+  </div>
+
+  <div class="url-row">
+    <input type="text" id="q-playlist-url" placeholder="プレイリストURL または ID" onkeydown="if(event.key==='Enter') fetchQuick()" />
+    <button class="primary-btn" id="q-fetch-btn" onclick="fetchQuick()">取得</button>
+  </div>
+
+  <div class="status" id="q-status"></div>
+
+  <div class="controls" id="q-controls" style="display:none">
+    <button class="ctrl-btn green" onclick="copyAllUrls()">全URLコピー</button>
+    <span class="badge" id="q-badge"></span>
+  </div>
+
+  <div id="q-results">
+    <div class="empty">プレイリストURLを入力して取得</div>
+  </div>
+</div>
+
+<!-- ========== AUTO TAB ========== -->
+<div class="panel" id="panel-auto">
+
+  <div class="settings-toggle" id="auto-settings-toggle" onclick="toggleSettings('auto')">API設定</div>
+  <div class="settings-body" id="auto-settings-body">
+    <div class="field">
+      <label class="field-label">YouTube API キー</label>
+      <input type="password" id="a-yt-key" placeholder="AIzaSy..." />
+    </div>
+    <div class="field">
+      <label class="field-label">Gemini API キー</label>
+      <input type="password" id="a-gemini-key" placeholder="AIzaSy..." />
+    </div>
+    <div class="field">
+      <label class="field-label">Notion API キー</label>
+      <input type="password" id="a-notion-key" placeholder="secret_..." />
+    </div>
+    <div class="field">
+      <label class="field-label">Notion データベース ID</label>
+      <input type="text" id="a-notion-db" placeholder="32文字のID" />
+    </div>
+    <button class="save-btn" onclick="saveAutoSettings()">保存</button>
+  </div>
+
+  <div class="auto-section">
+    <div class="section-title">要約プロンプト</div>
+    <div class="prompt-area">
+      <textarea id="a-prompt" rows="5">の全スクリプト、動画の画面（映像）から読み取れる視覚的な情報もしっかり反映させながら要約して。
+主題とは関係ない、細かい雑学とかも含めて全ての実践できる知識、実用的な知識、教訓、キーワードを漏らさず抽出して、動画を見たのと同じ効果が得られるようにして</textarea>
+    </div>
+  </div>
+
+  <div class="auto-section">
+    <div class="section-title">プレイリスト</div>
+    <input type="text" id="a-playlist-url" placeholder="プレイリストURL または ID" style="margin-bottom:0" />
+  </div>
+
+  <button class="run-btn" id="a-run-btn" onclick="runAuto()">自動取得 → 要約 → 保存</button>
+
+  <div class="status" id="a-status" style="margin-top:16px"></div>
+  <div class="progress-wrap" id="a-progress-wrap">
+    <div class="progress-bar" id="a-progress-bar"></div>
+  </div>
+
+  <div class="log-wrap" id="a-log-wrap">
+    <div class="log-header">
+      <span class="section-title" style="margin-bottom:0">処理ログ</span>
+      <span class="badge" id="a-log-badge"></span>
+    </div>
+    <div class="log-list" id="a-log-list"></div>
+  </div>
+
+  <div class="history-section" id="a-history-section" style="display:none">
+    <div class="section-title">保存履歴</div>
+    <div class="history-list" id="a-history-list"></div>
+  </div>
+</div>
+
+<script>
+// ===================== STORAGE =====================
+const KEYS = {
+  qYt: 'yt_q_ytkey',
+  qPrompt: 'yt_q_prompt',
+  aYt: 'yt_a_ytkey',
+  aGemini: 'yt_a_geminikey',
+  aNation: 'yt_a_notionkey',
+  aNotionDb: 'yt_a_notiondb',
+  aPrompt: 'yt_a_prompt',
+  history: 'yt_a_history',
+};
+
+const DEFAULT_PROMPT_QUICK = `{URL}
+
+の全スクリプト、動画の画面（映像）から読み取れる視覚的な情報もしっかり反映させながら要約して。
+主題とは関係ない、細かい雑学とかも含めて全ての実践できる知識、実用的な知識、教訓、キーワードを漏らさず抽出して、動画を見たのと同じ効果が得られるようにして`;
+
+const DEFAULT_PROMPT_AUTO = `の全スクリプト、動画の画面（映像）から読み取れる視覚的な情報もしっかり反映させながら要約して。
+主題とは関係ない、細かい雑学とかも含めて全ての実践できる知識、実用的な知識、教訓、キーワードを漏らさず抽出して、動画を見たのと同じ効果が得られるようにして`;
+
+function load() {
+  document.getElementById('q-yt-key').value = localStorage.getItem(KEYS.qYt) || '';
+  document.getElementById('q-prompt').value = localStorage.getItem(KEYS.qPrompt) || DEFAULT_PROMPT_QUICK;
+  document.getElementById('a-yt-key').value = localStorage.getItem(KEYS.aYt) || '';
+  document.getElementById('a-gemini-key').value = localStorage.getItem(KEYS.aGemini) || '';
+  document.getElementById('a-notion-key').value = localStorage.getItem(KEYS.aNation) || '';
+  document.getElementById('a-notion-db').value = localStorage.getItem(KEYS.aNotionDb) || '';
+  document.getElementById('a-prompt').value = localStorage.getItem(KEYS.aPrompt) || DEFAULT_PROMPT_AUTO;
+  renderHistory();
+}
+
+function saveQuickSettings() {
+  localStorage.setItem(KEYS.qYt, document.getElementById('q-yt-key').value.trim());
+  localStorage.setItem(KEYS.qPrompt, document.getElementById('q-prompt').value);
+  flashBtn(event.target, '✓ 保存');
+}
+
+function saveAutoSettings() {
+  localStorage.setItem(KEYS.aYt, document.getElementById('a-yt-key').value.trim());
+  localStorage.setItem(KEYS.aGemini, document.getElementById('a-gemini-key').value.trim());
+  localStorage.setItem(KEYS.aNation, document.getElementById('a-notion-key').value.trim());
+  localStorage.setItem(KEYS.aNotionDb, document.getElementById('a-notion-db').value.trim());
+  localStorage.setItem(KEYS.aPrompt, document.getElementById('a-prompt').value);
+  flashBtn(event.target, '✓ 保存');
+}
+
+function flashBtn(btn, msg) {
+  const orig = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(() => btn.textContent = orig, 2000);
+}
+
+// ===================== UI =====================
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'quick') || (i === 1 && tab === 'auto'));
+  });
+  document.getElementById('panel-quick').classList.toggle('active', tab === 'quick');
+  document.getElementById('panel-auto').classList.toggle('active', tab === 'auto');
+}
+
+function toggleSettings(which) {
+  const toggle = document.getElementById(`${which}-settings-toggle`);
+  const body = document.getElementById(`${which}-settings-body`);
+  toggle.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+function setStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = 'status ' + type;
+  el.innerHTML = type === 'loading'
+    ? `<span class="spinner"></span>${msg}`
+    : msg;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function videoUrl(id) { return `https://www.youtube.com/watch?v=${id}`; }
+
+function extractPlaylistId(input) {
+  input = input.trim();
+  const m = input.match(/[?&]list=([A-Za-z0-9_-]+)/);
+  if (m) return m[1];
+  if (/^[A-Za-z0-9_-]{10,}$/.test(input)) return input;
+  return null;
+}
+
+// ===================== QUICK TAB =====================
+let quickVideos = [];
+
+async function fetchQuick() {
+  const apiKey = document.getElementById('q-yt-key').value.trim() || localStorage.getItem(KEYS.qYt);
+  if (!apiKey) { setStatus('q-status', 'error', 'エラー: YouTube APIキーを設定してください'); return; }
+
+  const raw = document.getElementById('q-playlist-url').value.trim();
+  const plId = extractPlaylistId(raw);
+  if (!plId) { setStatus('q-status', 'error', 'エラー: 有効なプレイリストURLを入力してください'); return; }
+
+  document.getElementById('q-fetch-btn').disabled = true;
+  document.getElementById('q-controls').style.display = 'none';
+  quickVideos = [];
+  setStatus('q-status', 'loading', '取得中...');
+  document.getElementById('q-results').innerHTML = '';
+
+  try {
+    let pageToken = '';
+    do {
+      const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${plId}&key=${apiKey}${pageToken ? '&pageToken='+pageToken : ''}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      for (const item of data.items) {
+        const sn = item.snippet;
+        if (sn.resourceId?.videoId) {
+          quickVideos.push({ id: sn.resourceId.videoId, title: sn.title, thumb: sn.thumbnails?.medium?.url || '' });
+        }
+      }
+      pageToken = data.nextPageToken || '';
+      setStatus('q-status', 'loading', `取得中... ${quickVideos.length}件`);
+    } while (pageToken);
+
+    renderQuick();
+    setStatus('q-status', 'done', `✓ ${quickVideos.length}件取得完了`);
+    document.getElementById('q-badge').textContent = `${quickVideos.length} videos`;
+    document.getElementById('q-controls').style.display = 'flex';
+  } catch(e) {
+    setStatus('q-status', 'error', `エラー: ${e.message}`);
+    document.getElementById('q-results').innerHTML = '<div class="empty">取得に失敗しました</div>';
+  } finally {
+    document.getElementById('q-fetch-btn').disabled = false;
+  }
+}
+
+function renderQuick() {
+  const container = document.getElementById('q-results');
+  container.innerHTML = '';
+  quickVideos.forEach((v, i) => {
+    const item = document.createElement('div');
+    item.className = 'video-item';
+    item.style.animationDelay = `${Math.min(i*15,300)}ms`;
+    item.innerHTML = `
+      <div class="video-main">
+        <span class="video-num">${String(i+1).padStart(2,'0')}</span>
+        ${v.thumb ? `<img class="video-thumb" src="${v.thumb}" loading="lazy" />` : `<div class="video-thumb-ph"></div>`}
+        <div class="video-info">
+          <div class="video-title">${escHtml(v.title)}</div>
+          <div class="video-url">${videoUrl(v.id)}</div>
+        </div>
+      </div>
+      <div class="video-actions">
+        <button class="action-btn gemini" onclick="openGemini('${v.id}', '${escHtml(v.title).replace(/'/g,"\\'")}')">Geminiで開く</button>
+        <button class="action-btn copy" id="copy-${v.id}" onclick="copyUrl(this, '${v.id}')">URLコピー</button>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function openGemini(videoId, title) {
+  const prompt = (localStorage.getItem(KEYS.qPrompt) || DEFAULT_PROMPT_QUICK).replace('{URL}', videoUrl(videoId));
+  navigator.clipboard.writeText(prompt).then(() => {
+    // Try app first, fall back to web
+    const appUrl = 'googlegemini://';
+    const webUrl = 'https://gemini.google.com/app';
+    
+    // Open Gemini app
+    window.location.href = appUrl;
+    
+    // Fallback to web after short delay
+    setTimeout(() => {
+      window.open(webUrl, '_blank');
+    }, 1500);
+  });
+}
+
+async function copyUrl(btn, id) {
+  await navigator.clipboard.writeText(videoUrl(id));
+  btn.textContent = '✓ コピー済み';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = 'URLコピー'; btn.classList.remove('copied'); }, 2000);
+}
+
+async function copyAllUrls() {
+  const text = quickVideos.map(v => videoUrl(v.id)).join('\n');
+  await navigator.clipboard.writeText(text);
+  flashBtn(event.target, '✓ コピーしました');
+}
+
+// ===================== AUTO TAB =====================
+let autoRunning = false;
+
+async function runAuto() {
+  if (autoRunning) return;
+
+  const ytKey = document.getElementById('a-yt-key').value.trim() || localStorage.getItem(KEYS.aYt);
+  const geminiKey = document.getElementById('a-gemini-key').value.trim() || localStorage.getItem(KEYS.aGemini);
+  const notionKey = document.getElementById('a-notion-key').value.trim() || localStorage.getItem(KEYS.aNation);
+  const notionDb = document.getElementById('a-notion-db').value.trim() || localStorage.getItem(KEYS.aNotionDb);
+  const prompt = document.getElementById('a-prompt').value || DEFAULT_PROMPT_AUTO;
+  const raw = document.getElementById('a-playlist-url').value.trim();
+  const plId = extractPlaylistId(raw);
+
+  if (!ytKey) { setStatus('a-status', 'error', 'エラー: YouTube APIキーを設定してください'); return; }
+  if (!geminiKey) { setStatus('a-status', 'error', 'エラー: Gemini APIキーを設定してください'); return; }
+  if (!notionKey) { setStatus('a-status', 'error', 'エラー: Notion APIキーを設定してください'); return; }
+  if (!notionDb) { setStatus('a-status', 'error', 'エラー: Notion データベースIDを設定してください'); return; }
+  if (!plId) { setStatus('a-status', 'error', 'エラー: プレイリストURLを入力してください'); return; }
+
+  autoRunning = true;
+  document.getElementById('a-run-btn').disabled = true;
+  document.getElementById('a-log-wrap').classList.add('visible');
+  document.getElementById('a-progress-wrap').classList.add('visible');
+  document.getElementById('a-log-list').innerHTML = '';
+
+  // Fetch playlist
+  setStatus('a-status', 'loading', 'プレイリスト取得中...');
+  let videos = [];
+  try {
+    let pageToken = '';
+    do {
+      const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${plId}&key=${ytKey}${pageToken ? '&pageToken='+pageToken : ''}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      for (const item of data.items) {
+        const sn = item.snippet;
+        if (sn.resourceId?.videoId) {
+          videos.push({ id: sn.resourceId.videoId, title: sn.title });
+        }
+      }
+      pageToken = data.nextPageToken || '';
+    } while (pageToken);
+  } catch(e) {
+    setStatus('a-status', 'error', `プレイリスト取得失敗: ${e.message}`);
+    autoRunning = false;
+    document.getElementById('a-run-btn').disabled = false;
+    return;
+  }
+
+  setStatus('a-status', 'loading', `${videos.length}件 処理開始...`);
+
+  // Init log items
+  const logList = document.getElementById('a-log-list');
+  videos.forEach((v, i) => {
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.id = `log-${i}`;
+    item.innerHTML = `
+      <span class="log-title">${escHtml(v.title)}</span>
+      <span class="log-status pending" id="log-status-${i}">待機中</span>
+    `;
+    logList.appendChild(item);
+  });
+
+  let doneCount = 0;
+  let errorCount = 0;
+  const results = [];
+
+  for (let i = 0; i < videos.length; i++) {
+    const v = videos[i];
+    const logStatus = document.getElementById(`log-status-${i}`);
+    logStatus.className = 'log-status processing';
+    logStatus.textContent = '処理中...';
+
+    // Scroll log item into view
+    document.getElementById(`log-${i}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    setStatus('a-status', 'loading', `(${i+1}/${videos.length}) ${v.title.slice(0,20)}...`);
+
+    try {
+      // Call Gemini API
+      const fullPrompt = `${videoUrl(v.id)}\n\n${prompt}`;
+      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: fullPrompt }] }],
+          generationConfig: { maxOutputTokens: 8192 }
+        })
+      });
+      const geminiData = await geminiRes.json();
+      if (geminiData.error) throw new Error(geminiData.error.message);
+      const summary = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '要約取得失敗';
+
+      // Save to Notion
+      await saveToNotion(notionKey, notionDb, v.title, videoUrl(v.id), summary);
+
+      logStatus.className = 'log-status done';
+      logStatus.textContent = '✓ 完了';
+      doneCount++;
+      results.push({ title: v.title, url: videoUrl(v.id), summary });
+    } catch(e) {
+      logStatus.className = 'log-status error';
+      logStatus.textContent = `✗ エラー`;
+      errorCount++;
+    }
+
+    // Update progress
+    const progress = Math.round(((i+1) / videos.length) * 100);
+    document.getElementById('a-progress-bar').style.width = progress + '%';
+    document.getElementById('a-log-badge').textContent = `${doneCount}/${videos.length}`;
+  }
+
+  // Save history
+  const historyEntry = {
+    id: Date.now(),
+    playlistId: plId,
+    playlistUrl: raw,
+    count: doneCount,
+    total: videos.length,
+    date: new Date().toLocaleString('ja-JP'),
+  };
+  const history = JSON.parse(localStorage.getItem(KEYS.history) || '[]');
+  history.unshift(historyEntry);
+  localStorage.setItem(KEYS.history, JSON.stringify(history.slice(0, 20)));
+
+  const msg = errorCount === 0
+    ? `✓ 全${doneCount}件 Notionに保存完了`
+    : `完了: ${doneCount}件成功 / ${errorCount}件失敗`;
+  setStatus('a-status', errorCount === 0 ? 'done' : 'error', msg);
+
+  renderHistory();
+  document.getElementById('a-history-section').style.display = 'block';
+  autoRunning = false;
+  document.getElementById('a-run-btn').disabled = false;
+}
+
+async function saveToNotion(notionKey, dbId, title, url, summary) {
+  const res = await fetch('https://api.notion.com/v1/pages', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${notionKey}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': '2022-06-28',
+    },
+    body: JSON.stringify({
+      parent: { database_id: dbId },
+      properties: {
+        title: { title: [{ text: { content: title } }] },
+        URL: { url: url },
+        日時: { date: { start: new Date().toISOString() } },
+      },
+      children: [
+        {
+          object: 'block',
+          type: 'paragraph',
+          paragraph: {
+            rich_text: [{ type: 'text', text: { content: url } }]
+          }
+        },
+        {
+          object: 'block',
+          type: 'divider',
+          divider: {}
+        },
+        ...chunkText(summary).map(chunk => ({
+          object: 'block',
+          type: 'paragraph',
+          paragraph: {
+            rich_text: [{ type: 'text', text: { content: chunk } }]
+          }
+        }))
+      ]
+    })
+  });
+  const data = await res.json();
+  if (data.object === 'error') throw new Error(data.message);
+  return data;
+}
+
+function chunkText(text, size = 1900) {
+  const chunks = [];
+  for (let i = 0; i < text.length; i += size) {
+    chunks.push(text.slice(i, i + size));
+  }
+  return chunks;
+}
+
+function renderHistory() {
+  const history = JSON.parse(localStorage.getItem(KEYS.history) || '[]');
+  const list = document.getElementById('a-history-list');
+  if (!list) return;
+
+  if (history.length === 0) {
+    document.getElementById('a-history-section').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('a-history-section').style.display = 'block';
+  list.innerHTML = '';
+  history.forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `
+      <div class="history-playlist">${escHtml(h.playlistUrl || h.playlistId)}</div>
+      <div class="history-count">${h.count} / ${h.total} 件保存済み</div>
+      <div class="history-date">${h.date}</div>
+      <div class="history-actions">
+        <button class="small-btn" onclick="rerun('${h.playlistUrl || h.playlistId}')">再実行</button>
+        <button class="small-btn danger" onclick="deleteHistory(${h.id})">削除</button>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function rerun(url) {
+  document.getElementById('a-playlist-url').value = url;
+  switchTab('auto');
+  document.getElementById('a-playlist-url').scrollIntoView({ behavior: 'smooth' });
+}
+
+function deleteHistory(id) {
+  const history = JSON.parse(localStorage.getItem(KEYS.history) || '[]').filter(h => h.id !== id);
+  localStorage.setItem(KEYS.history, JSON.stringify(history));
+  renderHistory();
+}
+
+// ===================== INIT =====================
+window.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>
