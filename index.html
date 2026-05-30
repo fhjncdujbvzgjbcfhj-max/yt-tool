@@ -972,7 +972,7 @@ async function runAuto() {
 }
 
 async function saveToNotion(notionKey, dbId, title, url, summary) {
-  const res = await fetch('https://api.notion.com/v1/pages', {
+  const res = await fetch('https://notion-proxy.fhjncdujbvzgjbcfhj.workers.dev/v1/pages', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${notionKey}`,
