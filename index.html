@@ -906,7 +906,7 @@ async function runAuto() {
       const fullPrompt = `${videoUrl(v.id)}\n\n${prompt}`;
       let geminiData;
       for (let attempt = 0; attempt < 3; attempt++) {
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -939,7 +939,7 @@ async function runAuto() {
     }
 
     // 動画間の待機（レート制限対策）
-    if (i < videos.length - 1) await new Promise(r => setTimeout(r, 3000));
+    if (i < videos.length - 1) await new Promise(r => setTimeout(r, 30000));
 
     // Update progress
     const progress = Math.round(((i+1) / videos.length) * 100);
